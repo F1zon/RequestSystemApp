@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ru.example.requestSystem.db.dao.Request;
 import ru.example.requestSystem.db.dto.RequestDto;
 import ru.example.requestSystem.db.enums.Status;
+import ru.example.requestSystem.db.enums.StatusConverter;
 import ru.example.requestSystem.db.repository.RequestRepo;
 import ru.example.requestSystem.service.RequestServiceImp;
 
@@ -74,16 +75,16 @@ public class ManageRequest extends AppLayout implements HasUrlParameter<Long> {
 
     public void fillForm() {
         if (requestService.findById(id) != null) {
+            StatusConverter converter = new StatusConverter();
             RequestDto request = requestService.findById(id);
             data.setValue(request.getData());
-            comment.setValue(request.getComment());
-//            No enum constant ru.example.requestSystem.db.enums.Status.fixed
-            statusComboBox.setItems(Status.valueOf(request.getStatus()));
+            comment.setValue(request.getComment() == null ? "" : request.getComment());
+            statusComboBox.setValue(converter.convertToEntityAttribute(request.getStatus()));
         }
 
         save.addAttachListener(e -> {
            // Создание объекта заявки по полученному значению с формы
-            Request req = new Request();
+            RequestDto req = new RequestDto();
             Notification notification = id.equals(0L) ? createRequest() : editRequest();
 
 //            requestRepo.save(req);

@@ -12,7 +12,9 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.example.requestSystem.db.RequestModel;
 import ru.example.requestSystem.db.dao.Request;
+import ru.example.requestSystem.db.dao.User;
 import ru.example.requestSystem.db.dto.RequestDto;
+import ru.example.requestSystem.db.dto.UserDto;
 import ru.example.requestSystem.db.repository.RequestRepo;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.button.Button;
@@ -25,10 +27,12 @@ import java.util.List;
 
 @Route("requests")
 @PageTitle("Requests")
-public class RequestList extends AppLayout {
+public class RequestList extends AppLayout implements HasUrlParameter<Long> {
     VerticalLayout verticalLayout;
     Grid<RequestModel> grid;
     RouterLink routerLink;
+    UserDto user;
+    Long id;
 
     @Autowired
     RequestServiceImp requestService;
@@ -44,6 +48,12 @@ public class RequestList extends AppLayout {
         verticalLayout.add(grid);
         addToNavbar(new H3("Список заявок"));
         setContent(verticalLayout);
+    }
+
+    @Override
+    public void setParameter(BeforeEvent beforeEvent, Long id) {
+        this.id = id;
+        this.user = userService.findById(id);
     }
 
     @PostConstruct
@@ -63,27 +73,29 @@ public class RequestList extends AppLayout {
                 UI.getCurrent().navigate(ManageRequest.class, request.getId());
             }));
 
-            grid.addColumn(new NativeButtonRenderer<RequestModel>("Удалить", request -> {
-                Dialog dialog = new Dialog();
-                Button confirm = new Button("Удалить");
-                Button cancel = new Button("Отмена");
-                dialog.add("Удалить заявку?");
-                dialog.add(confirm);
-                dialog.add(cancel);
-                confirm.addClickListener(e -> {
-                    requestService.deleteById(request.getId());
-                    dialog.close();
-                    Notification notification = new Notification("Заявка удалена", 1000);
-                    notification.setPosition(Notification.Position.MIDDLE);
-                    notification.open();
-                    grid.setItems(getAllRequests());
-                });
+            if (user.getRole().equals("operator")) {
+                grid.addColumn(new NativeButtonRenderer<RequestModel>("Удалить", request -> {
+                    Dialog dialog = new Dialog();
+                    Button confirm = new Button("Удалить");
+                    Button cancel = new Button("Отмена");
+                    dialog.add("Удалить заявку?");
+                    dialog.add(confirm);
+                    dialog.add(cancel);
+                    confirm.addClickListener(e -> {
+                        requestService.deleteById(request.getId());
+                        dialog.close();
+                        Notification notification = new Notification("Заявка удалена", 1000);
+                        notification.setPosition(Notification.Position.MIDDLE);
+                        notification.open();
+                        grid.setItems(getAllRequests());
+                    });
 
-                cancel.addClickListener(e -> {
-                    dialog.close();
-                });
-                dialog.open();
-            }));
+                    cancel.addClickListener(e -> {
+                        dialog.close();
+                    });
+                    dialog.open();
+                }));
+            }
 
             grid.setItems(requests);
         }
@@ -92,10 +104,21 @@ public class RequestList extends AppLayout {
     private List<RequestModel> getAllRequests() {
         List<RequestDto> tmp = requestService.findAll();
         List<RequestModel> result = new ArrayList<>();
-        for (RequestDto request : tmp) {
-            result.add(new RequestModel(request.getId(), userService.findById(request.getClientId()).getName(),
-                    userService.findById(request.getOperatorId()).getName(), request.getStatus(),
-                    request.getData(), request.getComment(), request.getCreatedAt(), request.getUpdatedAt()));
+
+        if (user.getRole().equals("client")) {
+            for (RequestDto request : tmp) {
+                if (request.getClientId().equals(user.getId())) {
+                    result.add(new RequestModel(request.getId(), userService.findById(request.getClientId()).getName(),
+                            userService.findById(request.getOperatorId()).getName(), request.getStatus(),
+                            request.getData(), request.getComment(), request.getCreatedAt(), request.getUpdatedAt()));
+                }
+            }
+        } else {
+            for (RequestDto request : tmp) {
+                result.add(new RequestModel(request.getId(), userService.findById(request.getClientId()).getName(),
+                        userService.findById(request.getOperatorId()).getName(), request.getStatus(),
+                        request.getData(), request.getComment(), request.getCreatedAt(), request.getUpdatedAt()));
+            }
         }
 
         return result;
