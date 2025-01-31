@@ -3,35 +3,43 @@ package ru.example.requestSystem.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.example.requestSystem.db.RequestModel;
 import ru.example.requestSystem.db.dao.Request;
 import ru.example.requestSystem.db.dto.RequestDto;
+import ru.example.requestSystem.db.enums.Status;
 import ru.example.requestSystem.db.repository.RequestRepo;
-import ru.example.requestSystem.mapper.RequestMapper;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class RequestServiceImp implements RequestService {
+
     private final RequestRepo repo;
-    private final RequestMapper mapper;
 
     @Override
     public List<RequestDto> findAll() {
-        return mapper.RequestToDtos(repo.findAll());
+        List<RequestDto> dtos = new ArrayList<>();
+        List<Request> requests = repo.findAll();
+
+        for (Request request : requests) {
+            dtos.add(requestToDto(request));
+        }
+
+        return dtos;
     }
 
     @Override
     public RequestDto findById(Long id) {
-        return Optional.of(getById(id)).map(mapper::RequestToDto).get();
+        Request request = repo.findById(id).get();
+        return requestToDto(request);
     }
 
     @Override
-    public RequestDto save(RequestDto requestDto) {
-        return mapper.RequestToDto(repo.save(
-                mapper.DtoToRequest(requestDto)));
+    public void save(RequestDto requestDto) {
+        repo.save(dtoToRequest(requestDto));
     }
 
     @Override
@@ -44,5 +52,19 @@ public class RequestServiceImp implements RequestService {
         return repo.findById(id).orElseThrow(
                 () -> new IllegalArgumentException("Request not found")
         );
+    }
+
+    private RequestDto requestToDto(Request request) {
+        return new RequestDto(request.getId(), request.getClientId(),
+                request.getOperatorId(), request.getStatus().getStatus(),
+                request.getData(), request.getComment(),
+                request.getCreatedAt(), request.getUpdatedAt());
+    }
+
+    private Request dtoToRequest(RequestDto dto) {
+        return new Request(dto.getId(), dto.getClientId(),
+                dto.getOperatorId(), Status.valueOf(dto.getStatus()),
+                dto.getData(), dto.getComment(),
+                dto.getCreatedAt(), dto.getUpdatedAt());
     }
 }

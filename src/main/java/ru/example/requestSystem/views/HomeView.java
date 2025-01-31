@@ -14,6 +14,5 @@ public class HomeView extends VerticalLayout {
         add(new Paragraph("This is the home view"));
 
         add(new Paragraph("You can edit this view in src\\main\\java\\ru\\example\\requestSystem\\views\\HomeView.java"));
-
     }
 }

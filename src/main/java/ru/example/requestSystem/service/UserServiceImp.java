@@ -5,39 +5,42 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.example.requestSystem.db.dao.User;
 import ru.example.requestSystem.db.dto.UserDto;
+import ru.example.requestSystem.db.enums.Role;
 import ru.example.requestSystem.db.repository.UserRepo;
-import ru.example.requestSystem.mapper.UserMapper;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class UserServiceImp implements UserService {
     private final UserRepo repo;
-    private final UserMapper mapper;
 
     @Override
     public List<UserDto> findAll() {
-        return mapper.UsersToDtos(repo.findAll());
+        List<UserDto> dtos = new ArrayList<>();
+        List<User> users = repo.findAll();
+
+        for (User user : users) {
+            dtos.add(userToDto(user));
+        }
+
+        return dtos;
     }
 
     @Override
     public UserDto findById(Long id) {
-        return Optional.of(getById(id)).map(mapper::UserToDto).get();
+        User user = repo.findById(id).get();
+        return userToDto(user);
     }
 
     @Override
-    @Transactional
-    public UserDto save(UserDto userDto) {
-        return mapper.UserToDto(repo.save(
-                mapper.DtoToUser(userDto)));
+    public void save(UserDto userDto) {
+        User user = repo.save(dtoToUser(userDto));
     }
 
-//    TODO: Добавить обработчик на null
     @Override
-    @Transactional
     public void deleteById(Long id) {
         var user = getById(id);
         repo.delete(user);
@@ -47,5 +50,15 @@ public class UserServiceImp implements UserService {
         return repo.findById(id).orElseThrow(
                 () -> new RuntimeException("User with id " + id + " not found")
         );
+    }
+
+    private UserDto userToDto(User user) {
+        return new UserDto(user.getId(), user.getName(),
+                user.getRole().name(), user.getPasswordHash());
+    }
+
+    private User dtoToUser(UserDto dto) {
+        return new User(dto.getId(), dto.getName(),
+                Role.valueOf(dto.getRole()), dto.getPasswordHash());
     }
 }

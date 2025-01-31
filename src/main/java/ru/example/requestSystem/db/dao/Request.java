@@ -1,10 +1,11 @@
 package ru.example.requestSystem.db.dao;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import ru.example.requestSystem.db.enums.Status;
 
+@Setter
+@Getter
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,13 +19,14 @@ public class Request {
     private Long id;
 
     @Column(name = "client_id")
-    private int clientId;
+    private Long clientId;
 
     @Column(name = "operator_id")
-    private int operatorId;
+    private Long operatorId;
 
     @Column(name = "status")
-    private int status;
+//    @Enumerated(EnumType.STRING)
+    private Status status;
 
     @Column(name = "data")
     private String data;
@@ -35,6 +37,6 @@ public class Request {
     @Column(name = "created_at")
     private String createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "update_at")
     private String updatedAt;
 }

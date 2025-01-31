@@ -7,25 +7,34 @@ import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.renderer.NativeButtonRenderer;
-import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouterLink;
+import com.vaadin.flow.router.*;
 import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
+import ru.example.requestSystem.db.RequestModel;
 import ru.example.requestSystem.db.dao.Request;
+import ru.example.requestSystem.db.dto.RequestDto;
 import ru.example.requestSystem.db.repository.RequestRepo;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.button.Button;
+import ru.example.requestSystem.db.repository.UserRepo;
+import ru.example.requestSystem.service.RequestServiceImp;
+import ru.example.requestSystem.service.UserServiceImp;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Route("requests")
+@PageTitle("Requests")
 public class RequestList extends AppLayout {
     VerticalLayout verticalLayout;
-    Grid<Request> grid;
+    Grid<RequestModel> grid;
     RouterLink routerLink;
 
     @Autowired
-    RequestRepo requestRepo;
+    RequestServiceImp requestService;
+
+    @Autowired
+    UserServiceImp userService;
 
     public RequestList() {
         verticalLayout = new VerticalLayout();
@@ -39,22 +48,22 @@ public class RequestList extends AppLayout {
 
     @PostConstruct
     public void fillGrid() {
-        List<Request> requests = requestRepo.findAll();
+        List<RequestModel> requests = getAllRequests();
 
         if (!requests.isEmpty()) {
             // Вывод столбцов
-            grid.addColumn(Request::getClientId).setHeader("Заказчик");
-            grid.addColumn(Request::getOperatorId).setHeader("Исполнитель");
-            grid.addColumn(Request::getData).setHeader("Описание");
-            grid.addColumn(Request::getCreatedAt).setHeader("Созданно");
-            grid.addColumn(Request::getUpdatedAt).setHeader("Обновленно");
+            grid.addColumn(RequestModel::getClientId).setHeader("Заказчик");
+            grid.addColumn(RequestModel::getOperatorId).setHeader("Исполнитель");
+            grid.addColumn(RequestModel::getData).setHeader("Описание");
+            grid.addColumn(RequestModel::getCreatedAt).setHeader("Созданно");
+            grid.addColumn(RequestModel::getUpdatedAt).setHeader("Обновленно");
 
             // Кнопка удаления и ректирования
-            grid.addColumn(new NativeButtonRenderer<Request>("Редактировать", request -> {
+            grid.addColumn(new NativeButtonRenderer<RequestModel>("Редактировать", request -> {
                 UI.getCurrent().navigate(ManageRequest.class, request.getId());
             }));
 
-            grid.addColumn(new NativeButtonRenderer<Request>("Удалить", request -> {
+            grid.addColumn(new NativeButtonRenderer<RequestModel>("Удалить", request -> {
                 Dialog dialog = new Dialog();
                 Button confirm = new Button("Удалить");
                 Button cancel = new Button("Отмена");
@@ -62,12 +71,12 @@ public class RequestList extends AppLayout {
                 dialog.add(confirm);
                 dialog.add(cancel);
                 confirm.addClickListener(e -> {
-                    requestRepo.delete(request);
+                    requestService.deleteById(request.getId());
                     dialog.close();
                     Notification notification = new Notification("Заявка удалена", 1000);
                     notification.setPosition(Notification.Position.MIDDLE);
                     notification.open();
-                    grid.setItems(requestRepo.findAll());
+                    grid.setItems(getAllRequests());
                 });
 
                 cancel.addClickListener(e -> {
@@ -78,5 +87,17 @@ public class RequestList extends AppLayout {
 
             grid.setItems(requests);
         }
+    }
+
+    private List<RequestModel> getAllRequests() {
+        List<RequestDto> tmp = requestService.findAll();
+        List<RequestModel> result = new ArrayList<>();
+        for (RequestDto request : tmp) {
+            result.add(new RequestModel(request.getId(), userService.findById(request.getClientId()).getName(),
+                    userService.findById(request.getOperatorId()).getName(), request.getStatus(),
+                    request.getData(), request.getComment(), request.getCreatedAt(), request.getUpdatedAt()));
+        }
+
+        return result;
     }
 }

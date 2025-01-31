@@ -1,15 +1,16 @@
 package ru.example.requestSystem.db.dao;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import ru.example.requestSystem.db.enums.Role;
 
+@Getter
+@Setter
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 public class User {
 
     @Id
@@ -21,7 +22,7 @@ public class User {
     private String name;
 
     @Column(name = "role")
-    private String role;
+    private Role role;
 
     @Column(name = "password_hash")
     private String passwordHash;

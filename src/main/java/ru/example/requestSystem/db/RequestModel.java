@@ -1,16 +1,18 @@
-package ru.example.requestSystem.db.dto;
+package ru.example.requestSystem.db;
 
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-@Data
-@NoArgsConstructor
+@Getter
+@Setter
 @AllArgsConstructor
-public class RequestDto {
+@NoArgsConstructor
+public class RequestModel {
     private Long id;
-    private Long clientId;
-    private Long operatorId;
+    private String clientId;
+    private String operatorId;
     private String status;
     private String data;
     private String comment;

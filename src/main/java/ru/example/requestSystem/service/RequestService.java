@@ -7,6 +7,6 @@ import java.util.List;
 public interface RequestService {
     List<RequestDto> findAll();
     RequestDto findById(Long id);
-    RequestDto save(RequestDto requestDto);
+    void save(RequestDto requestDto);
     void deleteById(Long id);
 }
